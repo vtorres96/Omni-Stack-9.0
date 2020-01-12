@@ -22,7 +22,7 @@ module.exports = {
     }
 
     const spot = await Spot.create({
-      thumbnail: filename,
+      thumbnail: filename.replace(/ /g, "-"),
       company,
       price,
       techs: techs.split(",").map(tech => tech.trim()),
