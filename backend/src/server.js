@@ -1,13 +1,17 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const routes = require("./routes");
 const path = require("path");
-
 require("dotenv/config");
 
+const socketio = require("socket.io");
+const http = require("http");
+
+const routes = require("./routes");
+
 const app = express();
-const server = require("http").Server(app);
+const server = http.Server(app);
+const io = socketio(server);
 
 mongoose.connect(
   `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0-bfkrt.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`,
@@ -16,6 +20,21 @@ mongoose.connect(
     useUnifiedTopology: true
   }
 );
+
+const connectedUsers = {};
+
+io.on('connection', socket => {
+  const { user_id } = socket.handshake.query;
+
+  connectedUsers[user_id] = socket.id;
+});
+
+app.use((req, res, next) => {
+  req.io = io;
+  req.connectedUsers = connectedUsers;
+
+  return next();
+})
 
 app.use(cors());
 app.use(express.json());
